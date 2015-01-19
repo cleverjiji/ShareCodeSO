@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-LIB_BIN := random.so
+LIB_BIN := shareCode.so
 
 BUILD_DIR := build
 SRC_DIR := intercept
