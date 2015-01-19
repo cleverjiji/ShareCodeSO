@@ -1,0 +1,30 @@
+#ifndef _UTILITY_H_
+#define _UTILITY_H_
+
+#include <stdio.h>
+
+#define COLOR_RED "\033[31m"
+#define COLOR_GREEN "\033[32m"
+#define COLOR_YELLOW "\033[33m"
+#define COLOR_BLUE "\033[34m"
+#define COLOR_END "\033[m"
+
+#define SC_PRINT(format, ...) do{ fprintf(stderr, format, ##__VA_ARGS__);}while(0)
+#define SC_INFO(format, ...) do{ fprintf(stderr,COLOR_GREEN format COLOR_END, ##__VA_ARGS__);}while(0)
+#define SC_ERR(format, ...) do{ fprintf(stderr,COLOR_RED format COLOR_END, ##__VA_ARGS__);}while(0)
+
+#ifdef _DEBUG
+#define FATAL(cond, ...) do{if(cond) {SC_ERR("FATAL: %s:%-4d "__VA_ARGS__, __FILE__, __LINE__); abort();}}while(0)
+#define ASSERT(cond)       do{if(!(cond)) {SC_ERR("ASSERT failed: %s:%-4d ", __FILE__, __LINE__); abort();}}while(0)
+#define ASSERTM(cond, format, ...) do{if(!(cond)) {SC_ERR("ASSERT failed: %s:%-4d "format, __FILE__, __LINE__, ## __VA_ARGS__); abort();}}while(0)
+#define NOT_IMPLEMENTED(who)        do{SC_ERR("%s() in %s is not implemented by %s\n", __FUNCTION__, __FILE__, #who); abort();} while (0)
+#else
+#define FATAL(cond, ...) do{if(cond) {SC_ERR("FATAL: %s:%-4d "__VA_ARGS__, __FILE__, __LINE__); abort();}}while(0)
+#define ASSERT(cond)       
+#define ASSERTM(cond, format, ...) 
+#define NOT_IMPLEMENTED(who)       
+
+#endif
+
+
+#endif

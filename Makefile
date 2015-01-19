@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-LIB_BIN := shareCode.so
+LIB_BIN := sc.so
 
 BUILD_DIR := build
 SRC_DIR := intercept
@@ -8,10 +8,10 @@ TEST_DIR := test
 INCLUDE := -I./include 
 
 OPTIMIZE := -O0 -g
-EXTRA_FLAGS := -D_GNU_SOURCE -D_DEBUG
-CFLAGS := $(OPTIMIZE) -fPIC -Wall  ${EXTRA_FLAGS}
+EXTRA_FLAGS := -D_DEBUG
+CFLAGS := $(OPTIMIZE) -fPIC -Wall ${EXTRA_FLAGS}
 
-LIBS := -lc -ldl 
+LIBS := -ldl 
 LD_FLAGS := -shared
 
 CXX := g++ 
