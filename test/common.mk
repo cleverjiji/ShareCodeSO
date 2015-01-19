@@ -6,7 +6,7 @@ INCLUDE := -I./
 CFLAGS := -O0 -g
 CXX := g++ 
 CC := gcc
-ext := random.test
+ext := test
 
 #########################################
 ### DO NOT MODIFY THE FOLLOWING LINES ###          
@@ -29,7 +29,7 @@ clean:
 test:
 	@for i in ${EXE}; do\
 		if \
-		RR_RECORD=T LD_PRELOAD=./../../random.so ./$$i; \
+		LD_PRELOAD=./../../sc.so ./$$i; \
 		then echo -e "[\e[32mSUCC \e[m] \e[33;1m$$i\e[m"; \
 		else echo -e "[\e[31mFAIL\e[m] \e[33;1m$$i\e[m"; exit -1; fi; \
 		done

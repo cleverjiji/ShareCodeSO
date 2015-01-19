@@ -2,6 +2,7 @@
 #define _UTILITY_H_
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define COLOR_RED "\033[31m"
 #define COLOR_GREEN "\033[32m"

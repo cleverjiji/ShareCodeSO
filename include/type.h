@@ -12,6 +12,6 @@ typedef int INT32;
 typedef unsigned int UINT32;
 typedef long long INT64;
 typedef unsigned long long UIN64;
-typedef unsigned long long ADDR;
+typedef unsigned long ADDR;
 
 #endif

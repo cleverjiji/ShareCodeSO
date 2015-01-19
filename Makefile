@@ -2,7 +2,7 @@ SHELL := /bin/bash
 LIB_BIN := sc.so
 
 BUILD_DIR := build
-SRC_DIR := intercept
+SRC_DIR := intercept memory
 TEST_DIR := test
 
 INCLUDE := -I./include 
