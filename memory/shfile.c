@@ -12,11 +12,15 @@
 typedef struct shm_item{
 	char *shm_name;
 	INT32 shm_fd;
+	ADDR region_start;
+	ADDR region_size;
 }SHM_ITEM;
 INT32 shm_file_max_num = 0;
+INT32 code_cache_idx = 0;
 SHM_ITEM shm_array[SHM_MAX_NUM];
 
-char *get_executable_name_from_path(char *path){
+inline char *get_executable_name_from_path(char *path)
+{
 	char *name = strrchr(path, '/');
 	ASSERT(name);
 	name++;
@@ -38,8 +42,55 @@ INT32 get_share_code_shm_fd(ADDR share_code_start, SIZE share_code_size, const c
 	//4. record 
 	shm_array[shm_file_max_num].shm_name = strdup(shm_name);
 	shm_array[shm_file_max_num].shm_fd = fd;
+	shm_array[shm_file_max_num].region_start = share_code_start;
+	shm_array[shm_file_max_num].region_size = share_code_size;
 	shm_file_max_num++;
 	return fd;
+}
+
+INT32 init_code_cache_shm(const char *main_file_name, SIZE code_cache_size)
+{
+	//1.construct file name
+	char code_cache_name[256];
+	sprintf(code_cache_name, "%s.code_cache", main_file_name);
+	//2.open shm file
+	INT32 fd = shm_open(code_cache_name, O_RDWR|O_CREAT, 0644);
+	PERROR(fd!=-1, "shm open failed!");
+	//3. truncate the shm file
+	INT32 ret = ftruncate(fd, code_cache_size);
+	PERROR(ret==0, "ftruncate failed!");
+	//4.record
+	shm_array[shm_file_max_num].shm_name = strdup(code_cache_name);
+	shm_array[shm_file_max_num].shm_fd = fd;
+	shm_array[shm_file_max_num].region_size = code_cache_size;
+	code_cache_idx = shm_file_max_num;
+	shm_file_max_num++;	
+	return fd;
+}
+
+void record_share_info(ADDR code_cache_start, const char *process_name)
+{
+	//1.record code_cache start info
+	shm_array[code_cache_idx].region_start = code_cache_start;
+	//2.write log
+	//2.1 construct log name
+	char log_name[256];
+	sprintf(log_name, "%s.log", process_name);
+	//2.2 create log file and record
+	FILE *log_file = fopen(log_name, "w+");
+	fprintf(log_file, "code_cache_idx %d\n", code_cache_idx);
+	INT32 idx;
+	for(idx=0; idx<shm_file_max_num; idx++){
+		if(idx!=code_cache_idx){
+			fprintf(log_file, "0x%lx-0x%lx /dev/shm/%s\n", shm_array[idx].region_start, \
+				shm_array[idx].region_start+shm_array[idx].region_size, shm_array[idx].shm_name);
+		}else{
+			fprintf(log_file, "0x%lx-0x%lx %s\n", shm_array[idx].region_start, \
+				shm_array[idx].region_start+shm_array[idx].region_size, shm_array[idx].shm_name);
+		}
+	}
+	//3.close
+	fclose(log_file);
 }
 
 void dump_shm_file()
@@ -61,5 +112,4 @@ void shm_file_unlink()
 		ret = remove(shm_array[shm_file_max_num].shm_name);
 		ASSERT(ret==0);
 	}
-
 }

@@ -142,7 +142,7 @@ void allocate_shm_file_for_share_code()
 			currentRow->shm_fd = get_share_code_shm_fd(currentRow->start, currentRow->end - currentRow->start, currentRow->pathname, idx);
 	}
 }
-
+#define CODE_CACHE_SIZE (1ull<<32)
 void share_code_segment()
 {
 	//1.get exetable name and path
@@ -174,7 +174,7 @@ void share_code_segment()
 			ret = munmap((void *)original_start, original_size);
 			PERROR(ret==0, "munmap failed!\n");
 			void * map_start = mmap((void*)original_start, original_size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, shm_fd, 0);
-			ASSERT(map_start!=MAP_FAILED);
+			PERROR(map_start!=MAP_FAILED, "mmap failed!");
 			//recover the backup data
 			memcpy((void*)original_start, buf, original_size);
 			//change to original prot
@@ -182,6 +182,12 @@ void share_code_segment()
 			PERROR(ret==0, "mprotect failed!\n");
 		}
 	}
-	//4.munmap buf
+	//6.code_cache init
+	INT32 code_cache_fd = init_code_cache_shm(process_name, CODE_CACHE_SIZE);
+	void * code_cache_start = mmap(NULL, CODE_CACHE_SIZE, PROT_READ|PROT_EXEC, MAP_SHARED, code_cache_fd, 0);
+	PERROR(code_cache_start!=MAP_FAILED, "mmap failed!");
+	//7.munmap buf
 	munmap(buf, max_len);
+	//8.record share info
+	record_share_info((ADDR)code_cache_start, process_name);
 }

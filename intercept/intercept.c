@@ -6,13 +6,14 @@
 void initialize() __attribute__((constructor));
 void fini() __attribute__((destructor));
 
-void initialize(){
+void initialize()
+{
 	SC_INFO("so initialize!\n");
 	share_code_segment();
-	
 }
 
-void fini(){
+void fini()
+{
 	SC_INFO("so fini!\n");
 }
 
