@@ -29,7 +29,7 @@ clean:
 test:
 	@for i in ${EXE}; do\
 		if \
-		LD_PRELOAD=./../../sc.so ./$$i; \
+		LD_PRELOAD=./../../libsc.so ./$$i; \
 		then echo -e "[\e[32mSUCC \e[m] \e[33;1m$$i\e[m"; \
 		else echo -e "[\e[31mFAIL\e[m] \e[33;1m$$i\e[m"; exit -1; fi; \
 		done

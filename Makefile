@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-LIB_BIN := sc.so
+LIB_BIN := libsc.so
 
 BUILD_DIR := build
 SRC_DIR := intercept memory
@@ -8,10 +8,10 @@ TEST_DIR := test
 INCLUDE := -I./include 
 
 OPTIMIZE := -O0 -g
-EXTRA_FLAGS := -D_DEBUG
+EXTRA_FLAGS := -D_DEBUG -D_GNU_SOURCE
 CFLAGS := $(OPTIMIZE) -fPIC -Wall ${EXTRA_FLAGS}
 
-LIBS := -ldl 
+LIBS := -ldl -lrt
 LD_FLAGS := -shared
 
 CXX := g++ 
@@ -37,7 +37,7 @@ vpath %.c $(SRC_DIR)
 
 all: $(OBJ) 
 	@if \
-	$(CC) $(OBJ) $(LD_FLAGS) -Wl,-Bsymbolic -Wl,-soname,$(LIB_BIN) -o $(LIB_BIN) $(LIBS);\
+	$(CC) $(OBJ) $(LD_FLAGS) -Wl,-soname,$(LIB_BIN) -o $(LIB_BIN) $(LIBS);\
 	then echo -e "[\e[32;1mLINK\e[m] \e[33m$(OBJ)\e[m \e[36m->\e[m \e[32;1m$(LIB_BIN)\e[m"; \
 	else echo -e "[\e[31mFAIL\e[m] \e[33m$(OBJ)\e[m \e[36m->\e[m \e[32;1m$(LIB_BIN)\e[m"; exit -1; fi;
 clean:

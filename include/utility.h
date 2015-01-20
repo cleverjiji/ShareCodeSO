@@ -15,6 +15,7 @@
 #define SC_ERR(format, ...) do{ fprintf(stderr,COLOR_RED format COLOR_END, ##__VA_ARGS__);}while(0)
 
 #ifdef _DEBUG
+#define PERROR(cond, format) do{if(!(cond)){perror(format); abort();}}while(0)
 #define FATAL(cond, ...) do{if(cond) {SC_ERR("FATAL: %s:%-4d "__VA_ARGS__, __FILE__, __LINE__); abort();}}while(0)
 #define ASSERT(cond)       do{if(!(cond)) {SC_ERR("ASSERT failed: %s:%-4d ", __FILE__, __LINE__); abort();}}while(0)
 #define ASSERTM(cond, format, ...) do{if(!(cond)) {SC_ERR("ASSERT failed: %s:%-4d "format, __FILE__, __LINE__, ## __VA_ARGS__); abort();}}while(0)
