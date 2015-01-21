@@ -4,6 +4,7 @@
 #include "type.h"
 #include "utility.h"
 #include "shfile.h"
+#include "libc_sc.h"
 
 typedef struct mapsRow{
 	ADDR start;
@@ -77,7 +78,8 @@ void get_executable_path_and_name()
 
 inline BOOL need_share_judge(const MapsFileItem *item_ptr)
 {
-	if(is_executable(item_ptr) && strstr(item_ptr->pathname, process_name)){
+	if(is_executable(item_ptr) &&  !strstr(item_ptr->pathname, "libsc.so") && !strstr(item_ptr->pathname, "[vdso]")
+		&& !strstr(item_ptr->pathname, "[vsyscall]")){
 		return true;
 	}else
 		return false;
@@ -142,7 +144,7 @@ void allocate_shm_file_for_share_code()
 			currentRow->shm_fd = get_share_code_shm_fd(currentRow->start, currentRow->end - currentRow->start, currentRow->pathname, idx);
 	}
 }
-#define CODE_CACHE_SIZE (1ull<<32)
+#define CODE_CACHE_SIZE (1ull<<30)
 void share_code_segment()
 {
 	//1.get exetable name and path
@@ -155,6 +157,8 @@ void share_code_segment()
 	PERROR(buf!=MAP_FAILED, "mmap failed!\n");
 	//4.init shm file for shared code segments 
 	allocate_shm_file_for_share_code();
+	//load libc_sc
+	libc_sc_load();
 	//5.share segments
 	INT32 idx;
 	for(idx=0; idx<mapsRowNum; idx++){
@@ -165,23 +169,27 @@ void share_code_segment()
 			INT32 original_prot = calculate_mmap_prot(currentRow);
 			INT32 shm_fd = currentRow->shm_fd;
 			ASSERT(shm_fd!=0);
+			
 			//change prot to readable
-			INT32 ret = mprotect((void*)original_start, original_size, PROT_READ|PROT_WRITE);
+			INT32 ret = libsc_mprotect((void*)original_start, original_size, PROT_READ|PROT_WRITE|PROT_EXEC);
 			PERROR(ret==0, "mprotect failed!\n");
 			//backup the code segment
-			memcpy(buf, (const void*)original_start, original_size);
+			libsc_memcpy(buf, (const void*)original_start, original_size);
 			//remap the code segment to a share file
-			ret = munmap((void *)original_start, original_size);
+			ret = libsc_munmap((void *)original_start, original_size);
 			PERROR(ret==0, "munmap failed!\n");
-			void * map_start = mmap((void*)original_start, original_size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, shm_fd, 0);
+			void * map_start = libsc_mmap((void*)original_start, original_size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, shm_fd, 0);
 			PERROR(map_start!=MAP_FAILED, "mmap failed!");
 			//recover the backup data
-			memcpy((void*)original_start, buf, original_size);
+			libsc_memcpy((void*)original_start, buf, original_size);
 			//change to original prot
-			ret = mprotect((void*)original_start, original_size, original_prot);
+			ret = libsc_mprotect((void*)original_start, original_size, original_prot);
 			PERROR(ret==0, "mprotect failed!\n");
+			
 		}
 	}
+	//unload libc_sc
+	libc_sc_unload();
 	//6.code_cache init
 	INT32 code_cache_fd = init_code_cache_shm(process_name, CODE_CACHE_SIZE);
 	void * code_cache_start = mmap(NULL, CODE_CACHE_SIZE, PROT_READ|PROT_EXEC, MAP_SHARED, code_cache_fd, 0);

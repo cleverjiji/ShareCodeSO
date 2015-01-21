@@ -2,6 +2,7 @@
 #define _TYPE_H_
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef bool BOOL;
 typedef char INT8;

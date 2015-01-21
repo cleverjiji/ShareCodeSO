@@ -11,6 +11,7 @@
 #define SHM_MAX_NUM 100
 typedef struct shm_item{
 	char *shm_name;
+	char *code_path;
 	INT32 shm_fd;
 	ADDR region_start;
 	ADDR region_size;
@@ -42,6 +43,7 @@ INT32 get_share_code_shm_fd(ADDR share_code_start, SIZE share_code_size, const c
 	//4. record 
 	shm_array[shm_file_max_num].shm_name = strdup(shm_name);
 	shm_array[shm_file_max_num].shm_fd = fd;
+	shm_array[shm_file_max_num].code_path = strdup(share_code_path);
 	shm_array[shm_file_max_num].region_start = share_code_start;
 	shm_array[shm_file_max_num].region_size = share_code_size;
 	shm_file_max_num++;
@@ -61,6 +63,7 @@ INT32 init_code_cache_shm(const char *main_file_name, SIZE code_cache_size)
 	PERROR(ret==0, "ftruncate failed!");
 	//4.record
 	shm_array[shm_file_max_num].shm_name = strdup(code_cache_name);
+	shm_array[shm_file_max_num].code_path = strdup(code_cache_name);
 	shm_array[shm_file_max_num].shm_fd = fd;
 	shm_array[shm_file_max_num].region_size = code_cache_size;
 	code_cache_idx = shm_file_max_num;
@@ -75,19 +78,14 @@ void record_share_info(ADDR code_cache_start, const char *process_name)
 	//2.write log
 	//2.1 construct log name
 	char log_name[256];
-	sprintf(log_name, "%s.log", process_name);
+	sprintf(log_name, "/tmp/%s.log", process_name);
 	//2.2 create log file and record
 	FILE *log_file = fopen(log_name, "w+");
 	fprintf(log_file, "code_cache_idx %d\n", code_cache_idx);
 	INT32 idx;
 	for(idx=0; idx<shm_file_max_num; idx++){
-		if(idx!=code_cache_idx){
-			fprintf(log_file, "0x%lx-0x%lx /dev/shm/%s\n", shm_array[idx].region_start, \
-				shm_array[idx].region_start+shm_array[idx].region_size, shm_array[idx].shm_name);
-		}else{
-			fprintf(log_file, "0x%lx-0x%lx %s\n", shm_array[idx].region_start, \
-				shm_array[idx].region_start+shm_array[idx].region_size, shm_array[idx].shm_name);
-		}
+		fprintf(log_file, "%lx-%lx %s %s\n", shm_array[idx].region_start, \
+			shm_array[idx].region_start+shm_array[idx].region_size, shm_array[idx].shm_name, shm_array[idx].code_path);
 	}
 	//3.close
 	fclose(log_file);

@@ -2,13 +2,15 @@ SHELL := /bin/bash
 LIB_BIN := libsc.so
 
 BUILD_DIR := build
-SRC_DIR := intercept memory
+SRC_DIR := intercept memory libc-sc
 TEST_DIR := test
+
+LIBC_PATH := $(shell which ls | xargs ldd | grep libc.so | cut -d ' ' -f 3)
 
 INCLUDE := -I./include 
 
 OPTIMIZE := -O0 -g
-EXTRA_FLAGS := -D_DEBUG -D_GNU_SOURCE
+EXTRA_FLAGS := -D_DEBUG -D_GNU_SOURCE -DLIBC_PATH="\""$(LIBC_PATH)"\""
 CFLAGS := $(OPTIMIZE) -fPIC -Wall ${EXTRA_FLAGS}
 
 LIBS := -ldl -lrt
