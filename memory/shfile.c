@@ -78,7 +78,7 @@ void record_share_info(ADDR code_cache_start, const char *process_name)
 	//2.write log
 	//2.1 construct log name
 	char log_name[256];
-	sprintf(log_name, "/tmp/%s.log", process_name);
+	sprintf(log_name, "/tmp/%s.share.log", process_name);
 	//2.2 create log file and record
 	FILE *log_file = fopen(log_name, "w+");
 	fprintf(log_file, "code_cache_idx %d\n", code_cache_idx);
