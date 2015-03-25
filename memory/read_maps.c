@@ -85,6 +85,10 @@ inline BOOL need_share_judge(const MapsFileItem *item_ptr)
 		return false;
 }
 
+INT32 heap_idx = -1;
+INT32 stack_idx = -1;
+SIZE so_shared_size = 0;
+
 size_t read_proc_maps()
 {
 	//1.open maps file
@@ -102,15 +106,28 @@ size_t read_proc_maps()
 		currentRow->pathname[0] = '\0';
 		sscanf(row_buffer, "%lx-%lx %s %lx %s %d %s", &(currentRow->start), &(currentRow->end), \
 			currentRow->perms, &(currentRow->offset), currentRow->dev, &(currentRow->inode), currentRow->pathname);
+
+		//find heap and stack
+		if(strstr(currentRow->pathname, "[heap]"))
+			heap_idx = mapsRowNum;
+		else if(strstr(currentRow->pathname, "[stack]"))
+			stack_idx = mapsRowNum;
+		
 		//calculate the row number
 		mapsRowNum++;
         	ASSERT(mapsRowNum < mapsRowMaxNum);
 		//calculate the max size
-		size_t currentRowSize = currentRow->end - currentRow->start;
-		if(currentRowSize>max_size)
-			max_size = currentRowSize;
-		//judge the segment need be shared or not
-		currentRow->needShared= need_share_judge(currentRow);
+		if(need_share_judge(currentRow)){
+			size_t currentRowSize = currentRow->end - currentRow->start;
+			if(currentRowSize>max_size)
+				max_size = currentRowSize;
+			//calculate so code size
+			if(mapsRowNum!=1)
+				so_shared_size+=currentRowSize;
+			//judge the segment need be shared or not
+			currentRow->needShared = true;
+		}else
+			currentRow->needShared = false;
 		//read next row
 		fgets(row_buffer, 256, maps_file);
 	}
@@ -144,10 +161,87 @@ void allocate_shm_file_for_share_code()
 			currentRow->shm_fd = get_share_code_shm_fd(currentRow->start, currentRow->end - currentRow->start, currentRow->pathname, idx);
 	}
 }
-#define CODE_CACHE_SIZE (1ull<<30)
+
+void allocate_code_cache()
+{
+	//main executable code cache
+	ADDR start = 0x10000;
+	ADDR size = mapsArray[0].start - start;
+	INT32 code_cache_fd = init_code_cache_shm(process_name, start, size);
+	void * code_cache_start = mmap((void*)start, size, PROT_READ|PROT_EXEC, MAP_SHARED|MAP_FIXED, code_cache_fd, 0);
+	PERROR(code_cache_start!=MAP_FAILED, "mmap failed!");
+	//so code cache
+	start = mapsArray[heap_idx+1].start - so_shared_size*2;
+	size = so_shared_size*2;
+	code_cache_fd = init_code_cache_shm(process_name, start, size);
+	code_cache_start = mmap((void*)start, size, PROT_READ|PROT_EXEC, MAP_SHARED|MAP_FIXED, code_cache_fd, 0);
+	PERROR(code_cache_start!=MAP_FAILED, "mmap failed!");
+}
+
+#define SHARE_STACK_MULTIPULE 8
+
+void *temp_stack = NULL;
+ADDR temp_stack_rsp = 0;
+ADDR origin_stack_rsp = 0;
+void *share_stack_start = NULL;
+SIZE share_stack_size = 0;
+void *default_stack_start = NULL;
+SIZE default_stack_size = 0;
+void *buf = NULL;
+INT32 share_stack_fd = -1;
+void *ret = NULL;
+void share_stack()
+{
+	//sleep(10);
+	// 1.allocate temp stack which is used for share origin stack
+	temp_stack = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
+	PERROR(temp_stack!=MAP_FAILED, "mmap failed!");
+	temp_stack_rsp = (ADDR)temp_stack + 0x1000;
+	// 1.2 calculate default stack info
+	default_stack_start = (void*)mapsArray[stack_idx].start;
+	default_stack_size = mapsArray[stack_idx].end - mapsArray[stack_idx].start;
+	// 1.3 enlarge default stack
+	share_stack_size = default_stack_size*SHARE_STACK_MULTIPULE;
+	share_stack_start = (void*)(mapsArray[stack_idx].end - share_stack_size);
+	ASSERT((ADDR)share_stack_start>=(mapsArray[stack_idx-1].end));
+	SC_INFO("0x%lx-0x%lx\n", (ADDR)default_stack_start, (ADDR)default_stack_start+default_stack_size);
+	SC_ERR("0x%lx-0x%lx\n", (ADDR)share_stack_start, share_stack_size+(ADDR)share_stack_start);
+	// 2.store rsp and switch stack
+	__asm__ __volatile__ (
+		"movq %%rsp, %[stack]\n\t"
+		"movq %[new_stack], %%rsp\n\t"
+		:[stack]"+m"(origin_stack_rsp), [new_stack]"+m"(temp_stack_rsp)
+		::"cc"
+	);
+	
+	// 3.share origin stack
+	// 3.1 allocate a buffer and record origin stack content
+	buf = mmap (NULL, default_stack_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	PERROR(buf!=MAP_FAILED, "mmap failed!\n");	
+	memcpy(buf, (const void*)default_stack_start, default_stack_size);	
+	// 3.2 share enlarged stack
+	share_stack_fd = init_share_stack_shm(process_name, (ADDR)share_stack_start, share_stack_size);
+	ret = mmap(share_stack_start, share_stack_size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, share_stack_fd, 0);
+	PERROR(ret!=MAP_FAILED, "mmap failed!");
+	// 3.3 recover default stack data
+	memcpy(default_stack_start, (const void*)buf, default_stack_size);
+	// 3.4 munmap buffer
+	munmap(buf, default_stack_size);
+	
+	// 4.restore rsp
+	__asm__ __volatile__(
+		"movq %[stack], %%rsp\n\t"
+		:[stack]"+m"(origin_stack_rsp)
+		::"cc"
+	);
+	// 5.free temp stack
+	munmap(temp_stack, 0x1000);
+	return ;
+}
+
 void share_code_segment()
 {
-	//1.get exetable name and path
+	//1.get executable name and path
 	get_executable_path_and_name();
 	//2.read proc maps to find need shared segments
 	size_t max_len = read_proc_maps();
@@ -191,11 +285,13 @@ void share_code_segment()
 	//unload libc_sc
 	libc_sc_unload();
 	//6.code_cache init
-	INT32 code_cache_fd = init_code_cache_shm(process_name, CODE_CACHE_SIZE);
-	void * code_cache_start = mmap(NULL, CODE_CACHE_SIZE, PROT_READ|PROT_EXEC, MAP_SHARED, code_cache_fd, 0);
-	PERROR(code_cache_start!=MAP_FAILED, "mmap failed!");
+	allocate_code_cache();
 	//7.munmap buf
 	munmap(buf, max_len);
-	//8.record share info
-	record_share_info((ADDR)code_cache_start, process_name);
+	//8.map cc
+	map_cc_to_code();
+	//9.share stack
+	share_stack();
+	//10.record share info
+	record_share_info(process_name);
 }

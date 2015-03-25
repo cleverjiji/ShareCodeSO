@@ -1,4 +1,10 @@
 #include <stdio.h>
+void foo(){
+    __asm__ __volatile__(
+            "call   *(%%rax) \n\t"
+            :::
+            );
+}
 int main(int argc, const char *argv[])
 {
     switch(argc){
@@ -8,5 +14,6 @@ int main(int argc, const char *argv[])
         case 4: printf("argc=4\n");break;
     }
     printf("End Switch\n");
+    while(1);
     return 0;
 }

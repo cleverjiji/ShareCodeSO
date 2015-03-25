@@ -11,7 +11,7 @@ INCLUDE := -I./include
 
 OPTIMIZE := -O0 -g
 EXTRA_FLAGS := -D_DEBUG -D_GNU_SOURCE -DLIBC_PATH="\""$(LIBC_PATH)"\""
-CFLAGS := $(OPTIMIZE) -fPIC -Wall ${EXTRA_FLAGS}
+CFLAGS := -fno-omit-frame-pointer $(OPTIMIZE) -fPIC -Wall ${EXTRA_FLAGS}
 
 LIBS := -ldl -lrt
 LD_FLAGS := -shared
