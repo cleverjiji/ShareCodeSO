@@ -5,6 +5,8 @@
 #include "utility.h"
 #include "shfile.h"
 #include "libc_sc.h"
+#include "communication.h"
+#include <sys/types.h>
 
 typedef struct mapsRow{
 	ADDR start;
@@ -179,7 +181,7 @@ void allocate_code_cache()
 }
 
 #define SHARE_STACK_MULTIPULE 8
-
+extern COMMUNICATION_INFO *main_info;
 void *temp_stack = NULL;
 ADDR temp_stack_rsp = 0;
 ADDR origin_stack_rsp = 0;
@@ -236,6 +238,12 @@ void share_stack()
 	);
 	// 5.free temp stack
 	munmap(temp_stack, 0x1000);
+	// 6.init communication flag
+	main_info = (COMMUNICATION_INFO*)share_stack_start;
+	main_info->origin_rbp = 0;
+	main_info->origin_uc = 0;
+	main_info->process_id = getpid();
+	main_info->flag = 0;
 	return ;
 }
 

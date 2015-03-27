@@ -2,7 +2,7 @@ SHELL := /bin/bash
 LIB_BIN := libsc.so
 
 BUILD_DIR := build
-SRC_DIR := intercept memory libc-sc
+SRC_DIR := intercept memory libc-sc communication
 TEST_DIR := test
 
 LIBC_PATH := $(shell which ls | xargs ldd | grep libc.so | cut -d ' ' -f 3)
