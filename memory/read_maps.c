@@ -206,8 +206,8 @@ void share_stack()
 	share_stack_size = default_stack_size*SHARE_STACK_MULTIPULE;
 	share_stack_start = (void*)(mapsArray[stack_idx].end - share_stack_size);
 	ASSERT((ADDR)share_stack_start>=(mapsArray[stack_idx-1].end));
-	SC_INFO("0x%lx-0x%lx\n", (ADDR)default_stack_start, (ADDR)default_stack_start+default_stack_size);
-	SC_ERR("0x%lx-0x%lx\n", (ADDR)share_stack_start, share_stack_size+(ADDR)share_stack_start);
+	//SC_INFO("0x%lx-0x%lx\n", (ADDR)default_stack_start, (ADDR)default_stack_start+default_stack_size);
+	//SC_ERR("0x%lx-0x%lx\n", (ADDR)share_stack_start, share_stack_size+(ADDR)share_stack_start);
 	// 2.store rsp and switch stack
 	__asm__ __volatile__ (
 		"movq %%rsp, %[stack]\n\t"

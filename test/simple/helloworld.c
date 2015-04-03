@@ -14,6 +14,5 @@ int main(int argc, const char *argv[])
         case 4: printf("argc=4\n");break;
     }
     printf("End Switch\n");
-    while(1);
     return 0;
 }
