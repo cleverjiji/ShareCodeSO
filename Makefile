@@ -16,8 +16,8 @@ CFLAGS := -fno-omit-frame-pointer $(OPTIMIZE) -fPIC -Wall ${EXTRA_FLAGS}
 LIBS := -ldl -lrt
 LD_FLAGS := -shared
 
-CXX := g++ 
-CC := gcc
+CXX := g++ -Xlinker -rpath=/home/wangzhe/glibc/lib:/home/wangzhe/gcc/lib:/home/wangzhe/gcc/lib64 -Xlinker -I/home/wangzhe/glibc/lib/ld-2.17.so
+CC := gcc -Xlinker -rpath=/home/wangzhe/glibc/lib:/home/wangzhe/gcc/lib:/home/wangzhe/gcc/lib64 -Xlinker -I/home/wangzhe/glibc/lib/ld-2.17.so
 
 #########################################
 ### DO NOT MODIFY THE FOLLOWING LINES ###          

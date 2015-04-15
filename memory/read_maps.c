@@ -166,8 +166,12 @@ void allocate_shm_file_for_share_code()
 
 void allocate_code_cache()
 {
+	//debug
+	void *ret = mmap((void*)0x10000, 0x1000, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANON, -1, 0);
+	PERROR(ret!=MAP_FAILED, "mmap failed!\n");
+	
 	//main executable code cache
-	ADDR start = 0x10000;
+	ADDR start = 0x11000;
 	ADDR size = mapsArray[0].start - start;
 	INT32 code_cache_fd = init_code_cache_shm(process_name, start, size);
 	void * code_cache_start = mmap((void*)start, size, PROT_READ|PROT_EXEC, MAP_SHARED|MAP_FIXED, code_cache_fd, 0);
