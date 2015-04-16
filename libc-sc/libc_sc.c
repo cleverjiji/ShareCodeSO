@@ -66,7 +66,7 @@ void libc_sc_load(){
 	//1.copy libc.so to current_dir
 	copy_sc_libc();
 	//2.load libc-sc.so
-	handler = dlopen(libc_sc_name, RTLD_NOW | RTLD_NODELETE | RTLD_DEEPBIND);
+	handler = dlopen(libc_sc_name, RTLD_NOW | RTLD_DEEPBIND);
 	ASSERT(handler);
 	//3.dlsym
 	libsc_mmap = dlsym(handler, "mmap");

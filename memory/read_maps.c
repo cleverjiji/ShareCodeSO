@@ -253,6 +253,7 @@ void share_stack()
 
 void share_code_segment()
 {
+
 	//1.get executable name and path
 	get_executable_path_and_name();
 	//2.read proc maps to find need shared segments
@@ -263,7 +264,7 @@ void share_code_segment()
 	PERROR(buf!=MAP_FAILED, "mmap failed!\n");
 	//4.init shm file for shared code segments 
 	allocate_shm_file_for_share_code();
-	//load libc_sc
+		//load libc_sc
 	libc_sc_load();
 	//5.share segments
 	INT32 idx;
@@ -296,10 +297,10 @@ void share_code_segment()
 	}
 	//unload libc_sc
 	libc_sc_unload();
-	//6.code_cache init
-	allocate_code_cache();
-	//7.munmap buf
+	//6.munmap buf
 	munmap(buf, max_len);
+	//7.code_cache init
+	allocate_code_cache();
 	//8.map cc
 	map_cc_to_code();
 	//9.share stack
