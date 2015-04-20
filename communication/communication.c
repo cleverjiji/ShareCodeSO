@@ -14,7 +14,7 @@ BOOL sigusr1_used = false;
 
 void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 {
-	SC_INFO("recieve sigusr1 signal!\n");
+	SC_INFO("Stopped by random process!\n");
 	ASSERT((sig==SIGUSR1) && (main_info->flag==0));
 	struct ucontext *uc = (struct ucontext *)puc;
 	UINT64 current_rbp;
@@ -30,7 +30,9 @@ void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 	main_info->flag = 1;
 	
 	while(main_info->flag==1)
-		sched_yield();
+		;
+	main_info->flag = 1;
+	SC_INFO("Continue to run!\n");
 
 	return ;
 }

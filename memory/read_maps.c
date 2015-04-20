@@ -91,6 +91,11 @@ INT32 heap_idx = -1;
 INT32 stack_idx = -1;
 SIZE so_shared_size = 0;
 
+void read_proc_dynamic_link_info()
+{
+	;
+}
+
 size_t read_proc_maps()
 {
 	//1.open maps file
@@ -264,7 +269,7 @@ void share_code_segment()
 	PERROR(buf!=MAP_FAILED, "mmap failed!\n");
 	//4.init shm file for shared code segments 
 	allocate_shm_file_for_share_code();
-		//load libc_sc
+	//load libc_sc
 	libc_sc_load();
 	//5.share segments
 	INT32 idx;
