@@ -16,7 +16,7 @@ void initialize()
 
 void fini()
 {
-	;
+	fini_communication();
 }
 
 

@@ -13,6 +13,7 @@ typedef struct communication_info{
 }COMMUNICATION_INFO;
 
 void init_communication();
+void fini_communication();
 
 
 #endif

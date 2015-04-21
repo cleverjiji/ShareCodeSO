@@ -14,7 +14,7 @@ BOOL sigusr1_used = false;
 
 void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 {
-	SC_INFO("Stopped by random process!\n");
+	//SC_INFO("Stopped by random process!\n");
 	ASSERT((sig==SIGUSR1) && (main_info->flag==0));
 	struct ucontext *uc = (struct ucontext *)puc;
 	UINT64 current_rbp;
@@ -32,7 +32,7 @@ void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 	while(main_info->flag==1)
 		;
 	main_info->flag = 1;
-	SC_INFO("Continue to run!\n");
+	//SC_INFO("Continue to run!\n");
 
 	return ;
 }
@@ -48,6 +48,11 @@ void init_communication()
 	if(sigaction(SIGUSR1, &sa, NULL)==-1){
 		SC_ERR("sigaction error!\n");
 	}
+}
+
+void fini_communication()
+{
+	main_info->process_id = 0;
 }
 
 typedef void (*sighandler_t)(int);
