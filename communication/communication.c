@@ -1,6 +1,7 @@
 #include "communication.h"
 #include "utility.h"
 #include "wrapper.h"
+#include "child_stack_management.h"
 #include <signal.h>
 #include <dlfcn.h>
 #include <unistd.h>
@@ -11,11 +12,13 @@ COMMUNICATION_INFO *main_info = NULL;
 
 struct sigaction client_sigusr1;
 BOOL sigusr1_used = false;
+extern pid_t sc_gettid();
+extern pid_t main_tid;
 
 void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 {
-	//SC_INFO("Stopped by random process!\n");
-	ASSERT((sig==SIGUSR1) && (main_info->flag==0));
+	ASSERT(sig==SIGUSR1);
+
 	struct ucontext *uc = (struct ucontext *)puc;
 	UINT64 current_rbp;
 	__asm__ __volatile__(
@@ -24,16 +27,29 @@ void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 		   ::"cc"
 		   );
 
-	main_info->origin_rbp = current_rbp;
-	main_info->origin_uc = uc;
-	main_info->process_id = getpid();
-	main_info->flag = 1;
-	
-	while(main_info->flag==1)
-		;
-	main_info->flag = 1;
-	//SC_INFO("Continue to run!\n");
+	pid_t curr_tid = sc_gettid();
 
+	if(curr_tid==main_tid){
+		ASSERT(main_info->flag==0 && main_info->process_id==curr_tid);
+		main_info->origin_rbp = current_rbp;
+		main_info->origin_uc = uc;
+		main_info->flag = 1;
+		
+		while(main_info->flag==1)
+			;
+		main_info->flag = 1;
+		
+	}else{
+		COMMUNICATION_INFO *child_info = find_child_info(curr_tid);
+		ASSERT(child_info->flag==0);
+		child_info->origin_rbp = current_rbp;
+		child_info->origin_uc = uc;
+		child_info->flag = 1;
+
+		while(child_info->flag==1)
+			;
+		child_info->flag = 1;
+	}
 	return ;
 }
 

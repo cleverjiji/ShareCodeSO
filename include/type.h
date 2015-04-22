@@ -15,5 +15,8 @@ typedef long long INT64;
 typedef unsigned long long UINT64;
 typedef unsigned long ADDR;
 typedef size_t SIZE;
+typedef int spinlock_t;
+
+#define CHILD_STACK_SIZE 0x801000
 
 #endif

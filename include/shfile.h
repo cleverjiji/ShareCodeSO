@@ -9,5 +9,7 @@ void record_share_info(const char *process_name);
 void map_cc_to_code();
 extern void dump_shm_file();
 extern void shm_file_unlink();
+extern void set_child_group_stack_start(ADDR stack_start);
+extern INT32 init_child_group_stack_shm(const char *main_file_name, SIZE stack_size);
 
 #endif

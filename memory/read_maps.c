@@ -60,15 +60,13 @@ INT32 calculate_mmap_prot(MapsFileItem *item_ptr)
 	 return ret;
 }
 
-#define PATH_MAX 2048
-#define NAME_MAX 1024
-char process_path[PATH_MAX];
-char process_name[NAME_MAX];
+char process_path[2048];
+char process_name[1024];
 
 void get_executable_path_and_name()
 {
 	char *path_end;
-	INT32 ret = readlink("/proc/self/exe", process_path, PATH_MAX); 
+	INT32 ret = readlink("/proc/self/exe", process_path, 2048); 
 	ASSERT(ret>0);
 
 	path_end = strrchr(process_path,  '/');
@@ -201,6 +199,8 @@ SIZE default_stack_size = 0;
 void *buf = NULL;
 INT32 share_stack_fd = -1;
 void *ret = NULL;
+extern pid_t sc_gettid();
+
 void share_stack()
 {
 	//sleep(10);
@@ -251,14 +251,17 @@ void share_stack()
 	main_info = (COMMUNICATION_INFO*)share_stack_start;
 	main_info->origin_rbp = 0;
 	main_info->origin_uc = 0;
-	main_info->process_id = getpid();
+	main_info->process_id = sc_gettid();
 	main_info->flag = 0;
 	return ;
 }
 
+extern void init_child_stack(void);
+pid_t main_tid = 0;
+
 void share_code_segment()
 {
-
+	main_tid = sc_gettid();
 	//1.get executable name and path
 	get_executable_path_and_name();
 	//2.read proc maps to find need shared segments
@@ -310,6 +313,8 @@ void share_code_segment()
 	map_cc_to_code();
 	//9.share stack
 	share_stack();
+	// 10.share child stack
+	init_child_stack();
 	//10.record share info
 	record_share_info(process_name);
 }

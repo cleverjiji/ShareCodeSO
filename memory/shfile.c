@@ -81,6 +81,38 @@ INT32 init_share_stack_shm(const char *main_file_name, ADDR stack_start, SIZE st
 	return fd;
 }
 
+static INT32 child_group_stack_idx = 0;
+INT32 init_child_group_stack_shm(const char *main_file_name, SIZE stack_size)
+{
+	// 1.construct file name
+	char share_stack_name[256];
+	sprintf(share_stack_name, "%s.child_share_stack", main_file_name);
+	// 2.open shm file
+	remove(share_stack_name);
+	INT32 fd = shm_open(share_stack_name, O_RDWR|O_CREAT, 0644);
+	PERROR(fd!=-1, "shm open failed!");
+	// 3. truncate the shm file
+	INT32 ret = ftruncate(fd, stack_size);
+	PERROR(ret==0, "ftruncate failed!");
+	// 4.record
+	shm_array[shm_file_max_num].shm_name = strdup(share_stack_name);
+	shm_array[shm_file_max_num].code_path = strdup(share_stack_name);
+	shm_array[shm_file_max_num].shm_fd = fd;
+	shm_array[shm_file_max_num].region_start = 0;
+	shm_array[shm_file_max_num].region_size = stack_size;
+	shm_array[shm_file_max_num].is_code_cache = false;
+	shm_array[shm_file_max_num].code_cache_idx = -3;	
+	shm_array[shm_file_max_num].is_stack = true;
+	child_group_stack_idx = shm_file_max_num;
+	shm_file_max_num++;
+	return fd;
+}
+
+void set_child_group_stack_start(ADDR stack_start)
+{
+	shm_array[child_group_stack_idx].region_start = stack_start;
+}
+
 INT32 code_cache_num = 0;
 INT32 main_executable_cc_idx = -1;
 INT32 so_cc_idx = -1;

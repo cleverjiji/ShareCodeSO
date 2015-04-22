@@ -77,6 +77,6 @@ void libc_sc_load(){
 
 void libc_sc_unload()
 {
-	dlclose(handler);
+;//dlclose(handler);
 }
 
