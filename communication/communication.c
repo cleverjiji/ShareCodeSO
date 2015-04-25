@@ -28,7 +28,6 @@ void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 		   );
 
 	pid_t curr_tid = sc_gettid();
-
 	if(curr_tid==main_tid){
 		ASSERT(main_info->flag==0 && main_info->process_id==curr_tid);
 		main_info->origin_rbp = current_rbp;
