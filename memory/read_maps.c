@@ -187,7 +187,7 @@ void allocate_code_cache()
 	PERROR(code_cache_start!=MAP_FAILED, "mmap failed!");
 }
 
-#define SHARE_STACK_MULTIPULE 8
+#define SHARE_STACK_MULTIPULE 15
 extern COMMUNICATION_INFO *main_info;
 void *temp_stack = NULL;
 ADDR temp_stack_rsp = 0;
