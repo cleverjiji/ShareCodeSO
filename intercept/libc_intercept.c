@@ -6,7 +6,8 @@
 
 void *(*real_mmap)(void *addr, size_t length, int prot, int flags, int fd, off_t offset) = NULL; 
 int (*real_mprotect)(void *addr, size_t len, int prot) = NULL;
-extern BOOL is_in_pthread_create;
+
+extern __thread BOOL is_in_pthread_create;
 INT32 child_stack_idx = 0;
 
 void init_libc_wrapper(void) 

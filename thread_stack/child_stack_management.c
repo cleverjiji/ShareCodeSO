@@ -38,6 +38,7 @@ void init_child_stack(void)
 		global_child_stack_table[idx].contact_info->origin_rbp = 0;
 		global_child_stack_table[idx].contact_info->origin_uc = NULL;
 		global_child_stack_table[idx].contact_info->process_id = 0;
+		global_child_stack_table[idx].contact_info->can_stop = 1;
 		global_child_stack_table[idx].contact_info->flag = 0;
 		allocate_stack_start += CHILD_STACK_SIZE;
 	}
@@ -56,6 +57,7 @@ INT32 allocate_child_stack_memory(ADDR *stack_start, ADDR *stack_end)
 			global_child_stack_table[idx].contact_info->origin_rbp = 0;
 			global_child_stack_table[idx].contact_info->origin_uc = NULL;
 			global_child_stack_table[idx].contact_info->process_id = -1;
+			global_child_stack_table[idx].contact_info->can_stop = 1;
 			global_child_stack_table[idx].contact_info->flag = 0;
 			spin_unlock(&stack_lock);
 			return idx;
@@ -86,6 +88,7 @@ void free_child_stack(pthread_t thread_id)
 			global_child_stack_table[idx].contact_info->origin_rbp = 0;
 			global_child_stack_table[idx].contact_info->origin_uc = NULL;
 			global_child_stack_table[idx].contact_info->process_id = 0;
+			global_child_stack_table[idx].contact_info->can_stop = 1;
 			global_child_stack_table[idx].contact_info->flag = 0;
 			spin_unlock(&stack_lock);
 			return ;

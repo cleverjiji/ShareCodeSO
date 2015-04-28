@@ -14,6 +14,7 @@ struct sigaction client_sigusr1;
 BOOL sigusr1_used = false;
 extern pid_t sc_gettid();
 extern pid_t main_tid;
+extern __thread BOOL can_be_interrupted;
 
 void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 {
@@ -32,6 +33,7 @@ void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 		ASSERT(main_info->flag==0 && main_info->process_id==curr_tid);
 		main_info->origin_rbp = current_rbp;
 		main_info->origin_uc = uc;
+		main_info->can_stop = can_be_interrupted ? 1 : 0;
 		main_info->flag = 1;
 		
 		while(main_info->flag==1)
@@ -43,6 +45,7 @@ void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 		ASSERT(child_info->flag==0);
 		child_info->origin_rbp = current_rbp;
 		child_info->origin_uc = uc;
+		child_info->can_stop = can_be_interrupted ? 1 : 0;
 		child_info->flag = 1;
 
 		while(child_info->flag==1)
