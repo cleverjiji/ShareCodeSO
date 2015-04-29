@@ -56,7 +56,7 @@ INT32 allocate_child_stack_memory(ADDR *stack_start, ADDR *stack_end)
 			global_child_stack_table[idx].pt_t = -1;
 			global_child_stack_table[idx].contact_info->origin_rbp = 0;
 			global_child_stack_table[idx].contact_info->origin_uc = NULL;
-			global_child_stack_table[idx].contact_info->process_id = -1;
+			global_child_stack_table[idx].contact_info->process_id = 0;
 			global_child_stack_table[idx].contact_info->can_stop = 1;
 			global_child_stack_table[idx].contact_info->flag = 0;
 			spin_unlock(&stack_lock);
@@ -71,10 +71,36 @@ INT32 allocate_child_stack_memory(ADDR *stack_start, ADDR *stack_end)
 void set_thread_id(INT32 idx, pid_t thread_id, pthread_t thread)
 {
 	spin_lock(&stack_lock);
+	//SC_INFO("set thread id[%d] = 0x%lx\n", idx, thread);
 	global_child_stack_table[idx].pt_t = thread;
 	global_child_stack_table[idx].contact_info->process_id = thread_id;
 	spin_unlock(&stack_lock);
 	return ;
+}
+
+void init_reused_child_stack(ADDR rsp, pid_t thread_id, pthread_t thread)
+{
+	spin_lock(&stack_lock);
+	INT32 idx;
+	for(idx=0; idx<THREAD_MAX_NUM; idx++){
+		if(rsp>=global_child_stack_table[idx].stack_start && rsp<=global_child_stack_table[idx].stack_end){
+			ASSERT(!global_child_stack_table[idx].is_allocated && global_child_stack_table[idx].contact_info->process_id==0 \
+				&& global_child_stack_table[idx].contact_info->can_stop==1 && global_child_stack_table[idx].contact_info->flag==0);
+			//SC_INFO("reuse stack [%d] = 0x%lx\n", idx, thread);
+			global_child_stack_table[idx].is_allocated = true;
+			global_child_stack_table[idx].pt_t = thread;
+			global_child_stack_table[idx].contact_info->origin_rbp = 0;
+			global_child_stack_table[idx].contact_info->origin_uc = NULL;
+			global_child_stack_table[idx].contact_info->process_id = thread_id;
+			global_child_stack_table[idx].contact_info->can_stop = 1;
+			global_child_stack_table[idx].contact_info->flag = 0;
+			spin_unlock(&stack_lock);
+			return ;
+		}
+	}
+	spin_unlock(&stack_lock);
+	ASSERTM(0 ,"init reused child stack failed!\n");
+
 }
 
 void free_child_stack(pthread_t thread_id)
@@ -83,6 +109,7 @@ void free_child_stack(pthread_t thread_id)
 	INT32 idx;
 	for(idx=0; idx<THREAD_MAX_NUM; idx++){
 		if(global_child_stack_table[idx].pt_t == thread_id){
+			//SC_ERR("free thread id[%d] = 0x%lx\n", idx, thread_id);
 			global_child_stack_table[idx].is_allocated = false;
 			global_child_stack_table[idx].pt_t = 0;
 			global_child_stack_table[idx].contact_info->origin_rbp = 0;
@@ -98,6 +125,7 @@ void free_child_stack(pthread_t thread_id)
 	ASSERTM(0, "free child stack 0x%lx\n", thread_id);
 	return ;
 }
+
 
 COMMUNICATION_INFO *find_child_info(pid_t thread_id)
 {

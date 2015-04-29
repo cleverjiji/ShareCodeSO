@@ -78,8 +78,8 @@ void get_executable_path_and_name()
 
 inline BOOL need_share_judge(const MapsFileItem *item_ptr)
 {
-	if(is_executable(item_ptr) &&  !strstr(item_ptr->pathname, "libsc.so") && !strstr(item_ptr->pathname, "[vdso]")
-		&& !strstr(item_ptr->pathname, "[vsyscall]")){
+	if(is_readable(item_ptr) && !is_writeable(item_ptr) && is_executable(item_ptr) && item_ptr->offset==0 \
+		&&  !strstr(item_ptr->pathname, "libsc.so") && !strstr(item_ptr->pathname, "[vdso]") && !strstr(item_ptr->pathname, "[vsyscall]")){
 		return true;
 	}else
 		return false;

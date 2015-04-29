@@ -9,6 +9,7 @@ int (*real_mprotect)(void *addr, size_t len, int prot) = NULL;
 
 extern __thread BOOL is_in_pthread_create;
 INT32 child_stack_idx = 0;
+extern BOOL has_mmap_new_stack;
 
 void init_libc_wrapper(void) 
 {
@@ -19,7 +20,7 @@ void init_libc_wrapper(void)
 int wrapper_mprotect(void *addr, size_t len, int prot)
 {
 	if(is_in_pthread_create){
-		SC_INFO("in pthread create(mprotect)\n");
+		//SC_INFO("in pthread create(mprotect)\n");
 		return 0;
 	}else
 		return real_mprotect(addr, len, prot);
@@ -32,7 +33,8 @@ void *wrapper_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t
 		ADDR stack_start = 0;
 		ADDR stack_end = 0;
 		child_stack_idx = allocate_child_stack_memory(&stack_start, &stack_end);
-		SC_INFO("in pthread create(mmap)\n");
+		has_mmap_new_stack = true;
+		//SC_INFO("in pthread create(mmap)\n");
 		return (void*)stack_start;
 	}else
 		return real_mmap(addr, length, prot, flags, fd, offset);

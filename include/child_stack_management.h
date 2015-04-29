@@ -10,6 +10,7 @@
 extern INT32 allocate_child_stack_memory(ADDR * stack_start,ADDR * stack_end);
 extern void set_thread_id(INT32 idx,pid_t thread_id,pthread_t thread);
 extern void free_child_stack(pthread_t thread_id);
+extern void init_reused_child_stack(ADDR rsp, pid_t thread_id, pthread_t thread);
 COMMUNICATION_INFO *find_child_info(pid_t thread_id);
 
 
