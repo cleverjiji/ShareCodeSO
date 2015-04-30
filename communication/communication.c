@@ -6,6 +6,8 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sched.h>
+#include <asm/prctl.h>
+#include <sys/prctl.h>
 
 
 COMMUNICATION_INFO *main_info = NULL;
@@ -16,40 +18,38 @@ extern pid_t sc_gettid();
 extern pid_t main_tid;
 extern __thread BOOL can_be_interrupted;
 
+
 void sigusr1_handler(INT32 sig, siginfo_t *si, void *puc)
 {
 	ASSERT(sig==SIGUSR1);
 
 	struct ucontext *uc = (struct ucontext *)puc;
-	UINT64 current_rbp;
-	__asm__ __volatile__(
-		   "movq %%rbp, %[mem]\n\t"
-		   :[mem]"+m"(current_rbp)
-		   ::"cc"
-		   );
 
 	pid_t curr_tid = sc_gettid();
 	if(curr_tid==main_tid){
 		ASSERT(main_info->flag==0 && main_info->process_id==curr_tid);
-		main_info->origin_rbp = current_rbp;
+		main_info->jump_table_base = 0;
 		main_info->origin_uc = uc;
 		main_info->can_stop = can_be_interrupted ? 1 : 0;
 		main_info->flag = 1;
 		
 		while(main_info->flag==1)
 			;
-		main_info->flag = 1;
-		
+		if(main_info->jump_table_base!=0)
+			arch_prctl(ARCH_SET_GS, main_info->jump_table_base);
+		main_info->flag = 1;		
 	}else{
 		COMMUNICATION_INFO *child_info = find_child_info(curr_tid);
 		ASSERT(child_info->flag==0);
-		child_info->origin_rbp = current_rbp;
+		child_info->jump_table_base = 0;
 		child_info->origin_uc = uc;
 		child_info->can_stop = can_be_interrupted ? 1 : 0;
 		child_info->flag = 1;
 
 		while(child_info->flag==1)
 			;
+		if(child_info->jump_table_base!=0)
+			arch_prctl(ARCH_SET_GS, child_info->jump_table_base);
 		child_info->flag = 1;
 	}
 	return ;

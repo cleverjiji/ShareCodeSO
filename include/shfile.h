@@ -11,5 +11,7 @@ extern void dump_shm_file();
 extern void shm_file_unlink();
 extern void set_child_group_stack_start(ADDR stack_start);
 extern INT32 init_child_group_stack_shm(const char *main_file_name, SIZE stack_size);
+extern INT32 init_jump_table_shm(const char *main_file_name, SIZE jump_table_size);
+extern void set_jump_table_start(ADDR table_start);
 
 #endif

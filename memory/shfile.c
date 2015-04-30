@@ -107,10 +107,42 @@ INT32 init_child_group_stack_shm(const char *main_file_name, SIZE stack_size)
 	shm_file_max_num++;
 	return fd;
 }
-
 void set_child_group_stack_start(ADDR stack_start)
 {
 	shm_array[child_group_stack_idx].region_start = stack_start;
+}
+
+static INT32 jump_table_idx = 0;
+
+INT32 init_jump_table_shm(const char *main_file_name, SIZE jump_table_size)
+{
+	// 1.construct file name
+	char share_name[256];
+	sprintf(share_name, "%s.jump_table", main_file_name);
+	// 2.open shm file
+	remove(share_name);
+	INT32 fd = shm_open(share_name, O_RDWR|O_CREAT, 0644);
+	PERROR(fd!=-1, "shm open failed!");
+	// 3. truncate the shm file
+	INT32 ret = ftruncate(fd, jump_table_size);
+	PERROR(ret==0, "ftruncate failed!");
+	// 4.record
+	shm_array[shm_file_max_num].shm_name = strdup(share_name);
+	shm_array[shm_file_max_num].code_path = strdup(share_name);
+	shm_array[shm_file_max_num].shm_fd = fd;
+	shm_array[shm_file_max_num].region_start = 0;
+	shm_array[shm_file_max_num].region_size = jump_table_size;
+	shm_array[shm_file_max_num].is_code_cache = false;
+	shm_array[shm_file_max_num].code_cache_idx = -4;	
+	shm_array[shm_file_max_num].is_stack = false;
+	jump_table_idx = shm_file_max_num;
+	shm_file_max_num++;
+	return fd;
+}
+
+void set_jump_table_start(ADDR table_start)
+{
+	shm_array[jump_table_idx].region_start = table_start;
 }
 
 INT32 code_cache_num = 0;

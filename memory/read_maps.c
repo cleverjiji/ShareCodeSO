@@ -249,13 +249,13 @@ void share_stack()
 	munmap(temp_stack, 0x1000);
 	// 6.init communication flag
 	main_info = (COMMUNICATION_INFO*)share_stack_start;
-	main_info->origin_rbp = 0;
+	main_info->jump_table_base = 0;
 	main_info->origin_uc = 0;
 	main_info->process_id = sc_gettid();
 	main_info->flag = 0;
 	return ;
 }
-
+extern void jump_table_init(const char *main_file_name);
 extern void init_child_stack(void);
 pid_t main_tid = 0;
 
@@ -315,6 +315,7 @@ void share_code_segment()
 	share_stack();
 	// 10.share child stack
 	init_child_stack();
+	jump_table_init(process_name);
 	//10.record share info
 	record_share_info(process_name);
 }
